@@ -26,4 +26,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             Long customerId,
             LocalDateTime appointmentTime,
             BookingStatus status);
+
+    List<Booking> findByCustomerIdAndAppointmentTimeAfterOrderByAppointmentTimeAsc(
+            Long customerId,
+            LocalDateTime after);
 }

@@ -43,5 +43,5 @@ public class BookingDto {
     // output only
     private String businessName;
     private String status;
-    private boolean reminderSent;
+    private Boolean reminderSent;
 }

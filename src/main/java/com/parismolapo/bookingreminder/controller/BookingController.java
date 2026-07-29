@@ -2,6 +2,7 @@ package com.parismolapo.bookingreminder.controller;
 
 import com.parismolapo.bookingreminder.dto.BookingDto;
 import com.parismolapo.bookingreminder.response.Response;
+import com.parismolapo.bookingreminder.security.OwnershipGuard;
 import com.parismolapo.bookingreminder.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +19,14 @@ import java.util.List;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final OwnershipGuard ownershipGuard;
 
     @PostMapping
     public ResponseEntity<Response<BookingDto>> create(
             @RequestBody @Valid BookingDto dto) {
+
+        ownershipGuard.checkBusinessAccess(dto.getBusinessId());
+
         return ResponseEntity.ok(bookingService.createBooking(dto));
     }
 
@@ -42,19 +47,31 @@ public class BookingController {
 
             @RequestParam(required = false) String search) {
 
+        ownershipGuard.checkBusinessAccess(businessId);
+
         return ResponseEntity.ok(bookingService.getBookingsForBusiness(
                 businessId, date, from, to, status, search));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Response<BookingDto>> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(bookingService.getBookingById(id));
+
+        Response<BookingDto> booking = bookingService.getBookingById(id);
+
+        ownershipGuard.checkBusinessAccess(booking.getData().getBusinessId());
+
+        return ResponseEntity.ok(booking);
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<Response<BookingDto>> updateStatus(
             @PathVariable Long id,
             @RequestParam String status) {
+
+        Response<BookingDto> existing = bookingService.getBookingById(id);
+
+        ownershipGuard.checkBusinessAccess(existing.getData().getBusinessId());
+
         return ResponseEntity.ok(bookingService.updateStatus(id, status));
     }
 }

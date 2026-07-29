@@ -20,4 +20,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             Long businessId,
             LocalDateTime start,
             LocalDateTime end);
+
+    boolean existsByBusinessIdAndCustomerIdAndAppointmentTimeAndStatusNot(
+            Long businessId,
+            Long customerId,
+            LocalDateTime appointmentTime,
+            BookingStatus status);
 }

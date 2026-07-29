@@ -54,6 +54,18 @@ public class BookingServiceImpl implements BookingService {
                     "This customer has opted out of messages and cannot be booked");
         }
 
+        boolean alreadyBooked = bookingRepository
+                .existsByBusinessIdAndCustomerIdAndAppointmentTimeAndStatusNot(
+                        business.getId(),
+                        customer.getId(),
+                        appointment,
+                        BookingStatus.CANCELLED);
+
+        if (alreadyBooked) {
+            throw new BadRequestException(
+                    "This customer already has a booking at that time");
+        }
+
         Booking booking = Booking.builder()
                 .business(business)
                 .customer(customer)

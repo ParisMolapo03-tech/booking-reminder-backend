@@ -5,9 +5,11 @@ import com.parismolapo.bookingreminder.response.Response;
 import com.parismolapo.bookingreminder.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -25,13 +27,27 @@ public class BookingController {
 
     @GetMapping("/business/{businessId}")
     public ResponseEntity<Response<List<BookingDto>>> getForBusiness(
-            @PathVariable Long businessId) {
-        return ResponseEntity.ok(bookingService.getBookingsForBusiness(businessId));
+            @PathVariable Long businessId,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+
+            @RequestParam(required = false) String status,
+
+            @RequestParam(required = false) String search) {
+
+        return ResponseEntity.ok(bookingService.getBookingsForBusiness(
+                businessId, date, from, to, status, search));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Response<BookingDto>> getById(
-            @PathVariable Long id) {
+    public ResponseEntity<Response<BookingDto>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(bookingService.getBookingById(id));
     }
 

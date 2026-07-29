@@ -10,12 +10,18 @@ import com.parismolapo.bookingreminder.exception.NotFoundException;
 import com.parismolapo.bookingreminder.repository.BookingRepository;
 import com.parismolapo.bookingreminder.repository.BusinessRepository;
 import com.parismolapo.bookingreminder.repository.CustomerRepository;
+import com.parismolapo.bookingreminder.repository.spec.BookingSpecifications;
 import com.parismolapo.bookingreminder.response.Response;
 import com.parismolapo.bookingreminder.service.BookingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -27,6 +33,7 @@ public class BookingServiceImpl implements BookingService {
     private final CustomerRepository customerRepository;
 
     @Override
+    @Transactional
     public Response<BookingDto> createBooking(BookingDto dto) {
 
         Business business = businessRepository.findById(dto.getBusinessId())
@@ -81,13 +88,44 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public Response<List<BookingDto>> getBookingsForBusiness(Long businessId) {
+    @Transactional(readOnly = true)
+    public Response<List<BookingDto>> getBookingsForBusiness(
+            Long businessId,
+            LocalDate date,
+            LocalDate from,
+            LocalDate to,
+            String status,
+            String search) {
 
         if (!businessRepository.existsById(businessId)) {
             throw new NotFoundException("Business not found with id " + businessId);
         }
 
-        List<BookingDto> bookings = bookingRepository.findByBusinessId(businessId)
+        // a single date wins over a from/to range
+        LocalDate effectiveFrom = (date != null) ? date : from;
+        LocalDate effectiveTo = (date != null) ? date : to;
+
+        if (effectiveFrom != null && effectiveTo != null
+                && effectiveFrom.isAfter(effectiveTo)) {
+            throw new BadRequestException("'from' date cannot be after 'to' date");
+        }
+
+        BookingStatus statusFilter = parseStatus(status);
+
+        LocalDateTime fromTime =
+                (effectiveFrom == null) ? null : effectiveFrom.atStartOfDay();
+
+        LocalDateTime toTime =
+                (effectiveTo == null) ? null : effectiveTo.atTime(LocalTime.MAX);
+
+        Specification<Booking> spec = BookingSpecifications.forBusiness(businessId)
+                .and(BookingSpecifications.withStatus(statusFilter))
+                .and(BookingSpecifications.from(fromTime))
+                .and(BookingSpecifications.to(toTime))
+                .and(BookingSpecifications.search(search));
+
+        List<BookingDto> bookings = bookingRepository
+                .findAll(spec, Sort.by(Sort.Direction.ASC, "appointmentTime"))
                 .stream()
                 .map(this::mapToDto)
                 .toList();
@@ -96,6 +134,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Response<BookingDto> getBookingById(Long id) {
 
         Booking booking = bookingRepository.findById(id)
@@ -105,17 +144,16 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional
     public Response<BookingDto> updateStatus(Long id, String status) {
 
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Booking not found with id " + id));
 
-        BookingStatus newStatus;
-        try {
-            newStatus = BookingStatus.valueOf(status.toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            throw new BadRequestException(
-                    "Invalid status. Use PENDING, CONFIRMED, CANCELLED, COMPLETED or NO_SHOW");
+        BookingStatus newStatus = parseStatus(status);
+
+        if (newStatus == null) {
+            throw new BadRequestException("Status is required");
         }
 
         booking.setStatus(newStatus);
@@ -125,6 +163,20 @@ public class BookingServiceImpl implements BookingService {
     }
 
     // ---------- helpers ----------
+
+    private BookingStatus parseStatus(String status) {
+
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+
+        try {
+            return BookingStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException(
+                    "Invalid status. Use PENDING, CONFIRMED, CANCELLED, COMPLETED or NO_SHOW");
+        }
+    }
 
     private Customer findOrCreateCustomer(String name, String phoneNumber) {
         return customerRepository.findByPhoneNumber(phoneNumber)

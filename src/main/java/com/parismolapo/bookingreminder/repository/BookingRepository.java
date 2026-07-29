@@ -3,11 +3,13 @@ package com.parismolapo.bookingreminder.repository;
 import com.parismolapo.bookingreminder.entity.Booking;
 import com.parismolapo.bookingreminder.entity.BookingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-public interface BookingRepository extends JpaRepository<Booking, Long> {
+public interface BookingRepository
+        extends JpaRepository<Booking, Long>, JpaSpecificationExecutor<Booking> {
 
     List<Booking> findByBusinessId(Long businessId);
 

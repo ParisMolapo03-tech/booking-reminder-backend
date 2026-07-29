@@ -67,6 +67,7 @@ public class SecurityConfig {
                         // public
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/password/**").permitAll()
 
                         // incoming WhatsApp webhook - called by Meta, not a logged-in user
                         .requestMatchers(HttpMethod.POST, "/api/messages/incoming").permitAll()

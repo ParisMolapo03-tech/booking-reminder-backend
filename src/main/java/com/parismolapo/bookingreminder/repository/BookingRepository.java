@@ -30,4 +30,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByCustomerIdAndAppointmentTimeAfterOrderByAppointmentTimeAsc(
             Long customerId,
             LocalDateTime after);
+
+    List<Booking> findByCustomerIdOrderByAppointmentTimeDesc(Long customerId);
+
+    long countByCustomerId(Long customerId);
+
+    long countByCustomerIdAndStatus(Long customerId, BookingStatus status);
 }

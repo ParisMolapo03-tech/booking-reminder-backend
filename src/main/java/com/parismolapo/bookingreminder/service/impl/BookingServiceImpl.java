@@ -15,6 +15,7 @@ import com.parismolapo.bookingreminder.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -36,6 +37,14 @@ public class BookingServiceImpl implements BookingService {
             throw new BadRequestException("This business account is not active");
         }
 
+        LocalDateTime appointment = LocalDateTime.of(
+                dto.getAppointmentDate(),
+                dto.getAppointmentTime());
+
+        if (!appointment.isAfter(LocalDateTime.now())) {
+            throw new BadRequestException("Appointment must be in the future");
+        }
+
         Customer customer = findOrCreateCustomer(
                 dto.getCustomerName(),
                 dto.getCustomerPhoneNumber());
@@ -48,7 +57,7 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = Booking.builder()
                 .business(business)
                 .customer(customer)
-                .appointmentTime(dto.getAppointmentTime())
+                .appointmentTime(appointment)
                 .service(dto.getService())
                 .status(BookingStatus.PENDING)
                 .reminderSent(false)
@@ -122,7 +131,8 @@ public class BookingServiceImpl implements BookingService {
                 .businessName(booking.getBusiness().getName())
                 .customerName(booking.getCustomer().getName())
                 .customerPhoneNumber(booking.getCustomer().getPhoneNumber())
-                .appointmentTime(booking.getAppointmentTime())
+                .appointmentDate(booking.getAppointmentTime().toLocalDate())
+                .appointmentTime(booking.getAppointmentTime().toLocalTime())
                 .service(booking.getService())
                 .status(booking.getStatus().name())
                 .reminderSent(booking.isReminderSent())

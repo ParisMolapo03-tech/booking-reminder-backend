@@ -4,9 +4,11 @@ import com.parismolapo.bookingreminder.response.Response;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.stream.Collectors;
 
@@ -38,6 +40,23 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(Response.error(400, errors));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Response<Object>> handleUnreadable(HttpMessageNotReadableException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Response.error(400,
+                        "Request body could not be read. Check your field types and " +
+                                "make sure dates look like 2026-08-05T14:00:00"));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Response<Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Response.error(400,
+                        "Invalid value for parameter '" + ex.getName() + "'"));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

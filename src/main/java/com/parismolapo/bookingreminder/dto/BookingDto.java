@@ -1,7 +1,8 @@
 package com.parismolapo.bookingreminder.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -10,7 +11,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Data
 @Builder
@@ -34,9 +36,14 @@ public class BookingDto {
     )
     private String customerPhoneNumber;
 
+    @NotNull(message = "Appointment date is required")
+    @FutureOrPresent(message = "Appointment date cannot be in the past")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate appointmentDate;
+
     @NotNull(message = "Appointment time is required")
-    @Future(message = "Appointment time must be in the future")
-    private LocalDateTime appointmentTime;
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime appointmentTime;
 
     private String service;
 

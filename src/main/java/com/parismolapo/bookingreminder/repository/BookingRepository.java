@@ -9,6 +9,8 @@ import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
+    List<Booking> findByBusinessId(Long businessId);
+
     List<Booking> findByReminderSentFalseAndStatusNotAndAppointmentTimeBetween(
             BookingStatus status,
             LocalDateTime start,
